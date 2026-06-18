@@ -35,6 +35,7 @@ export type GameState = {
 export type GameAction =
   | { type: 'TICK'; now: number }
   | { type: 'PATCH_SETUP'; updates: Partial<Pick<GameState, 'teamName' | 'playersOnField' | 'halfDurationMs' | 'numHalves' | 'players'>> }
+  | { type: 'RESTORE'; saved: GameState & { savedAt: number } }
   | { type: 'PAUSE' }
   | { type: 'RESUME'; now: number }
   | { type: 'START_GAME'; now: number }
@@ -66,6 +67,36 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'PATCH_SETUP':
       return { ...state, ...action.updates }
+
+    case 'RESTORE': {
+      const { savedAt, ...saved } = action.saved
+      // Non-playing states need no clock math
+      if (saved.phase !== 'playing') return { ...saved, lastTickAt: null }
+
+      const elapsed = Date.now() - savedAt
+      const halfRemaining = saved.halfDurationMs - saved.halfClockMs
+      const halfAdded = Math.min(elapsed, halfRemaining)
+      const newHalfClock = saved.halfClockMs + halfAdded
+      const newGameClock = saved.gameClockMs + halfAdded
+      const halfExpired = halfAdded >= halfRemaining
+
+      if (halfExpired) {
+        // Bank active player stints at the moment the half expired
+        const players = saved.players.map(p =>
+          p.status === 'field' && p.currentStintStartMs !== null
+            ? { ...p, timeOnFieldMs: p.timeOnFieldMs + halfAdded, currentStintStartMs: null }
+            : p
+        )
+        const phase = saved.half === 1 ? 'halftime' : 'final'
+        return { ...saved, players, halfClockMs: saved.halfDurationMs, gameClockMs: newGameClock, phase, lastTickAt: null }
+      }
+
+      // Half didn't expire — advance game clock, keep stints running.
+      // currentStintStartMs is relative to gameClockMs, so player times
+      // auto-advance correctly as gameClockMs increases. Pause so coach
+      // can review before resuming.
+      return { ...saved, halfClockMs: newHalfClock, gameClockMs: newGameClock, phase: 'paused', lastTickAt: null }
+    }
 
     case 'TICK': {
       if (state.lastTickAt === null) return state

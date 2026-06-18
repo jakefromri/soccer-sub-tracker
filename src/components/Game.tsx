@@ -29,6 +29,20 @@ export default function Game({ state, dispatch }: Props) {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [state.phase, dispatch])
 
+  // Catch up the clock immediately when the user returns to the tab.
+  // Handles the case where the browser suspends intervals in the background
+  // without killing the page. The TICK reducer uses lastTickAt so a single
+  // dispatch with Date.now() advances the clock by the full elapsed gap.
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === 'visible') {
+        dispatch({ type: 'TICK', now: Date.now() })
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [dispatch])
+
   const fieldPlayers = state.players.filter(p => p.status === 'field')
   const benchPlayers = state.players.filter(p => p.status === 'bench')
 
