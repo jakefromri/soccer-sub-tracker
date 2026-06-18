@@ -48,14 +48,22 @@ export default function Game({ state, dispatch, onReset }: Props) {
   const benchPlayers = state.players.filter(p => p.status === 'bench')
 
   function handleSubOn(benchPlayerId: string) {
-    dispatch({ type: 'SUB_ON', benchPlayerId, now: Date.now() })
+    if (state.pendingSubOff) {
+      dispatch({ type: 'SUB_ON', fieldPlayerId: state.pendingSubOff, benchPlayerId })
+    } else if (state.pendingSubOn === benchPlayerId) {
+      dispatch({ type: 'SET_PENDING_SUB_ON', playerId: null })
+    } else {
+      dispatch({ type: 'SET_PENDING_SUB_ON', playerId: benchPlayerId })
+    }
   }
 
-  function handleSubOff(playerId: string) {
-    if (state.pendingSubOff === playerId) {
+  function handleSubOff(fieldPlayerId: string) {
+    if (state.pendingSubOn) {
+      dispatch({ type: 'SUB_ON', fieldPlayerId, benchPlayerId: state.pendingSubOn })
+    } else if (state.pendingSubOff === fieldPlayerId) {
       dispatch({ type: 'SET_PENDING_SUB_OFF', playerId: null })
     } else {
-      dispatch({ type: 'SET_PENDING_SUB_OFF', playerId })
+      dispatch({ type: 'SET_PENDING_SUB_OFF', playerId: fieldPlayerId })
     }
   }
 
@@ -203,6 +211,7 @@ export default function Game({ state, dispatch, onReset }: Props) {
                 <BenchPlayerCard
                   key={p.id}
                   player={p}
+                  isPendingOn={state.pendingSubOn === p.id}
                   onSubOn={() => handleSubOn(p.id)}
                 />
               ))}
@@ -211,10 +220,11 @@ export default function Game({ state, dispatch, onReset }: Props) {
         )}
 
         {/* Sub hint */}
-        {state.pendingSubOff && benchPlayers.length > 0 && (
-          <p className="text-xs text-amber-400 text-center">
-            tap "sub on" to complete the substitution
-          </p>
+        {state.pendingSubOff && (
+          <p className="text-xs text-amber-400 text-center">tap "sub on" to complete the substitution</p>
+        )}
+        {state.pendingSubOn && (
+          <p className="text-xs text-emerald-400 text-center">tap "sub off" to complete the substitution</p>
         )}
 
         {/* Goal buttons */}

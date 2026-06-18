@@ -29,7 +29,8 @@ export type GameState = {
   gameClockMs: number
   halfClockMs: number
   lastTickAt: number | null
-  pendingSubOff: string | null  // player id waiting to be subbed off
+  pendingSubOff: string | null
+  pendingSubOn: string | null
 }
 
 export type GameAction =
@@ -41,7 +42,8 @@ export type GameAction =
   | { type: 'START_GAME'; now: number }
   | { type: 'START_SECOND_HALF'; now: number }
   | { type: 'SET_PENDING_SUB_OFF'; playerId: string | null }
-  | { type: 'SUB_ON'; benchPlayerId: string; now: number }
+  | { type: 'SET_PENDING_SUB_ON'; playerId: string | null }
+  | { type: 'SUB_ON'; fieldPlayerId: string; benchPlayerId: string }
   | { type: 'ADD_HOME_GOAL'; scorerId: string; assistId?: string }
   | { type: 'ADD_AWAY_GOAL' }
   | { type: 'ADJUST_SCORE'; team: 'home' | 'away'; delta: number }
@@ -56,13 +58,6 @@ export function getPlayerTime(player: Player, gameClockMs: number): number {
   return computePlayerTimeAtMs(player, gameClockMs)
 }
 
-function longestOnFieldPlayerId(players: Player[], gameClockMs: number): string | null {
-  const onField = players.filter(p => p.status === 'field')
-  if (onField.length === 0) return null
-  return onField.reduce((max, p) =>
-    computePlayerTimeAtMs(p, gameClockMs) > computePlayerTimeAtMs(max, gameClockMs) ? p : max
-  ).id
-}
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -183,15 +178,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'SET_PENDING_SUB_OFF':
-      return { ...state, pendingSubOff: action.playerId }
+      return { ...state, pendingSubOff: action.playerId, pendingSubOn: null }
+
+    case 'SET_PENDING_SUB_ON':
+      return { ...state, pendingSubOn: action.playerId, pendingSubOff: null }
 
     case 'SUB_ON': {
-      const outId = state.pendingSubOff ?? longestOnFieldPlayerId(state.players, state.gameClockMs)
-      if (!outId) return state
-
       const players = state.players.map(p => {
-        if (p.id === outId) {
-          // coming off — bank their time
+        if (p.id === action.fieldPlayerId) {
           const banked = p.currentStintStartMs !== null
             ? p.timeOnFieldMs + (state.gameClockMs - p.currentStintStartMs)
             : p.timeOnFieldMs
@@ -202,8 +196,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         }
         return p
       })
-
-      return { ...state, players, pendingSubOff: null }
+      return { ...state, players, pendingSubOff: null, pendingSubOn: null }
     }
 
     case 'ADD_HOME_GOAL': {
@@ -262,4 +255,5 @@ export const initialState: GameState = {
   halfClockMs: 0,
   lastTickAt: null,
   pendingSubOff: null,
+  pendingSubOn: null,
 }

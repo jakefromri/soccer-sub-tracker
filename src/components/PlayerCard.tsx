@@ -41,23 +41,32 @@ export function FieldPlayerCard({ player, gameClockMs, isPendingOff, onSubOff }:
 
 type BenchCardProps = {
   player: Player
+  isPendingOn: boolean
   onSubOn: () => void
 }
 
-export function BenchPlayerCard({ player, onSubOn }: BenchCardProps) {
+export function BenchPlayerCard({ player, isPendingOn, onSubOn }: BenchCardProps) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 rounded-xl border bg-slate-900 border-slate-700">
+    <div className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-colors ${
+      isPendingOn
+        ? 'bg-emerald-900/60 border-emerald-500 shadow-lg shadow-emerald-900/30'
+        : 'bg-slate-900 border-slate-700'
+    }`}>
       <div>
         <p className="font-semibold text-white text-base">{player.name}</p>
-        <p className="text-sm font-mono tabular-nums text-slate-400">
+        <p className={`text-sm font-mono tabular-nums ${isPendingOn ? 'text-emerald-400' : 'text-slate-400'}`}>
           {fmtMs(player.timeOnFieldMs)} played
         </p>
       </div>
       <button
         onClick={onSubOn}
-        className="px-4 py-2 rounded-lg text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+        className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+          isPendingOn
+            ? 'bg-emerald-500 text-white hover:bg-emerald-400'
+            : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+        }`}
       >
-        sub on
+        {isPendingOn ? 'pending ✓' : 'sub on'}
       </button>
     </div>
   )
