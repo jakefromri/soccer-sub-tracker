@@ -46,5 +46,10 @@ export default function App() {
     )
   }
 
-  return <Game state={state} dispatch={dispatch} />
+  function handleReset() {
+    localStorage.removeItem(STORAGE_KEY)
+    dispatch({ type: 'RESET' })
+  }
+
+  return <Game state={state} dispatch={dispatch} onReset={handleReset} />
 }

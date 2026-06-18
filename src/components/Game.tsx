@@ -9,11 +9,12 @@ import Summary from './Summary'
 type Props = {
   state: GameState
   dispatch: React.Dispatch<GameAction>
+  onReset: () => void
 }
 
-type Modal = 'goal_home' | 'summary' | null
+type Modal = 'goal_home' | 'summary' | 'confirm_reset' | null
 
-export default function Game({ state, dispatch }: Props) {
+export default function Game({ state, dispatch, onReset }: Props) {
   const [modal, setModal] = useState<Modal>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -74,7 +75,7 @@ export default function Game({ state, dispatch }: Props) {
   const isActive = state.phase === 'playing' || state.phase === 'paused'
 
   if (state.phase === 'final' && modal !== 'summary') {
-    return <Summary state={state} isFinal />
+    return <Summary state={state} isFinal onReset={() => setModal('confirm_reset')} modal={modal} onModalClose={() => setModal(null)} onConfirmReset={onReset} />
   }
 
   return (
@@ -114,6 +115,12 @@ export default function Game({ state, dispatch }: Props) {
               className="px-3 py-2 rounded-lg text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
             >
               stats
+            </button>
+            <button
+              onClick={() => setModal('confirm_reset')}
+              className="px-3 py-2 rounded-lg text-sm bg-slate-800 hover:bg-slate-700 text-slate-400 transition-colors"
+            >
+              ✕
             </button>
           </div>
         </div>
@@ -244,7 +251,30 @@ export default function Game({ state, dispatch }: Props) {
       {modal === 'summary' && (
         <div className="fixed inset-0 bg-black/70 z-50 overflow-auto">
           <div className="min-h-svh bg-slate-900">
-            <Summary state={state} onClose={() => setModal(null)} />
+            <Summary state={state} onClose={() => setModal(null)} onReset={() => setModal('confirm_reset')} />
+          </div>
+        </div>
+      )}
+
+      {modal === 'confirm_reset' && (
+        <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-sm p-6 space-y-4">
+            <h3 className="text-lg font-bold text-white text-center">start a new game?</h3>
+            <p className="text-slate-400 text-sm text-center">this will clear the current game and all stats.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setModal(null)}
+                className="flex-1 py-3 rounded-xl bg-slate-700 text-slate-300 font-semibold hover:bg-slate-600 transition-colors"
+              >
+                cancel
+              </button>
+              <button
+                onClick={onReset}
+                className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition-colors"
+              >
+                yes, reset
+              </button>
+            </div>
           </div>
         </div>
       )}

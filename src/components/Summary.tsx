@@ -3,11 +3,16 @@ import type { GameState } from '../store/gameReducer'
 
 type Props = {
   state: GameState
-  onClose?: () => void  // null when it's the final screen
+  onClose?: () => void
+  onReset?: () => void
   isFinal?: boolean
+  // only used when Summary is the top-level final screen (not inside a modal)
+  modal?: string | null
+  onModalClose?: () => void
+  onConfirmReset?: () => void
 }
 
-export default function Summary({ state, onClose, isFinal = false }: Props) {
+export default function Summary({ state, onClose, onReset, isFinal = false, modal, onModalClose, onConfirmReset }: Props) {
   const { players, events, score, teamName } = state
   const byId = Object.fromEntries(players.map(p => [p.id, p.name]))
 
@@ -119,7 +124,40 @@ export default function Summary({ state, onClose, isFinal = false }: Props) {
             </button>
           )}
         </div>
+
+        {onReset && (
+          <button
+            onClick={onReset}
+            className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-semibold rounded-xl transition-colors border border-slate-700"
+          >
+            new game
+          </button>
+        )}
       </div>
+
+      {/* Confirm reset modal — only rendered when Summary is the top-level final screen */}
+      {modal === 'confirm_reset' && onModalClose && onConfirmReset && (
+        <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-sm p-6 space-y-4">
+            <h3 className="text-lg font-bold text-white text-center">start a new game?</h3>
+            <p className="text-slate-400 text-sm text-center">this will clear the current game and all stats.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={onModalClose}
+                className="flex-1 py-3 rounded-xl bg-slate-700 text-slate-300 font-semibold hover:bg-slate-600 transition-colors"
+              >
+                cancel
+              </button>
+              <button
+                onClick={onConfirmReset}
+                className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition-colors"
+              >
+                yes, reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

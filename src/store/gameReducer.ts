@@ -45,6 +45,7 @@ export type GameAction =
   | { type: 'ADD_HOME_GOAL'; scorerId: string; assistId?: string }
   | { type: 'ADD_AWAY_GOAL' }
   | { type: 'ADJUST_SCORE'; team: 'home' | 'away'; delta: number }
+  | { type: 'RESET' }
 
 function computePlayerTimeAtMs(player: Player, gameClockMs: number): number {
   if (player.currentStintStartMs === null) return player.timeOnFieldMs
@@ -238,6 +239,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const next = Math.max(0, current + action.delta)
       return { ...state, score: { ...state.score, [action.team]: next } }
     }
+
+    case 'RESET':
+      return initialState
 
     default:
       return state
