@@ -46,6 +46,7 @@ export type GameAction =
   | { type: 'SUB_ON'; fieldPlayerId: string; benchPlayerId: string }
   | { type: 'ADD_HOME_GOAL'; scorerId: string; assistId?: string }
   | { type: 'ADD_AWAY_GOAL' }
+  | { type: 'DELETE_EVENT'; eventId: string }
   | { type: 'ADJUST_SCORE'; team: 'home' | 'away'; delta: number }
   | { type: 'RESET' }
 
@@ -225,6 +226,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         score: { ...state.score, away: state.score.away + 1 },
         events: [...state.events, event],
       }
+    }
+
+    case 'DELETE_EVENT': {
+      const event = state.events.find(e => e.id === action.eventId)
+      if (!event) return state
+      const score =
+        event.type === 'goal_home'
+          ? { ...state.score, home: Math.max(0, state.score.home - 1) }
+          : event.type === 'goal_away'
+          ? { ...state.score, away: Math.max(0, state.score.away - 1) }
+          : state.score
+      return { ...state, events: state.events.filter(e => e.id !== action.eventId), score }
     }
 
     case 'ADJUST_SCORE': {

@@ -6,9 +6,10 @@ type FieldCardProps = {
   gameClockMs: number
   isPendingOff: boolean
   onSubOff: () => void
+  readOnly?: boolean
 }
 
-export function FieldPlayerCard({ player, gameClockMs, isPendingOff, onSubOff }: FieldCardProps) {
+export function FieldPlayerCard({ player, gameClockMs, isPendingOff, onSubOff, readOnly }: FieldCardProps) {
   const timeMs = player.currentStintStartMs !== null
     ? player.timeOnFieldMs + (gameClockMs - player.currentStintStartMs)
     : player.timeOnFieldMs
@@ -25,16 +26,18 @@ export function FieldPlayerCard({ player, gameClockMs, isPendingOff, onSubOff }:
           {fmtMs(timeMs)}
         </p>
       </div>
-      <button
-        onClick={onSubOff}
-        className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
-          isPendingOff
-            ? 'bg-amber-500 text-white hover:bg-amber-400'
-            : 'bg-slate-700 text-slate-200 hover:bg-amber-700 hover:text-white'
-        }`}
-      >
-        {isPendingOff ? 'pending ✓' : 'sub off'}
-      </button>
+      {!readOnly && (
+        <button
+          onClick={onSubOff}
+          className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+            isPendingOff
+              ? 'bg-amber-500 text-white hover:bg-amber-400'
+              : 'bg-slate-700 text-slate-200 hover:bg-amber-700 hover:text-white'
+          }`}
+        >
+          {isPendingOff ? 'pending ✓' : 'sub off'}
+        </button>
+      )}
     </div>
   )
 }
@@ -43,9 +46,10 @@ type BenchCardProps = {
   player: Player
   isPendingOn: boolean
   onSubOn: () => void
+  readOnly?: boolean
 }
 
-export function BenchPlayerCard({ player, isPendingOn, onSubOn }: BenchCardProps) {
+export function BenchPlayerCard({ player, isPendingOn, onSubOn, readOnly }: BenchCardProps) {
   return (
     <div className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-colors ${
       isPendingOn
@@ -58,16 +62,18 @@ export function BenchPlayerCard({ player, isPendingOn, onSubOn }: BenchCardProps
           {fmtMs(player.timeOnFieldMs)} played
         </p>
       </div>
-      <button
-        onClick={onSubOn}
-        className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
-          isPendingOn
-            ? 'bg-emerald-500 text-white hover:bg-emerald-400'
-            : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-        }`}
-      >
-        {isPendingOn ? 'pending ✓' : 'sub on'}
-      </button>
+      {!readOnly && (
+        <button
+          onClick={onSubOn}
+          className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+            isPendingOn
+              ? 'bg-emerald-500 text-white hover:bg-emerald-400'
+              : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+          }`}
+        >
+          {isPendingOn ? 'pending ✓' : 'sub on'}
+        </button>
+      )}
     </div>
   )
 }

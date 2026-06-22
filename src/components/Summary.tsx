@@ -20,14 +20,27 @@ export default function Summary({ state, onClose, onReset, isFinal = false, moda
     .filter(p => p.status !== 'inactive')
     .sort((a, b) => b.timeOnFieldMs - a.timeOnFieldMs)
 
+  const goalsByPlayer: Record<string, number> = Object.fromEntries(players.map(p => [p.id, 0]))
+  const assistsByPlayer: Record<string, number> = Object.fromEntries(players.map(p => [p.id, 0]))
+  events.forEach(ev => {
+    if (ev.type === 'goal_home') {
+      if (ev.scorerId && goalsByPlayer[ev.scorerId] !== undefined) goalsByPlayer[ev.scorerId]++
+      if (ev.assistId && assistsByPlayer[ev.assistId] !== undefined) assistsByPlayer[ev.assistId]++
+    }
+  })
+
   function copyText() {
     const lines: string[] = []
     const home = teamName || 'Home'
     lines.push(`${home} ${score.home} — Away ${score.away}`)
     lines.push('')
-    lines.push('time on field:')
+    lines.push('player stats:')
+    lines.push('  name              min    G  A')
     activePlayers.forEach(p => {
-      lines.push(`  ${p.name}: ${fmtMs(p.timeOnFieldMs)}`)
+      const min = fmtMs(p.timeOnFieldMs)
+      const g = goalsByPlayer[p.id] ?? 0
+      const a = assistsByPlayer[p.id] ?? 0
+      lines.push(`  ${p.name.padEnd(16)}  ${min}  ${g}  ${a}`)
     })
     if (events.length > 0) {
       lines.push('')
@@ -66,14 +79,22 @@ export default function Summary({ state, onClose, onReset, isFinal = false, moda
           </p>
         </div>
 
-        {/* Player times */}
+        {/* Player stats */}
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">time on field</p>
-          <div className="space-y-1.5">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">player stats</p>
+          <div className="bg-slate-800 rounded-xl overflow-hidden">
+            <div className="flex items-center px-4 py-2 border-b border-slate-700">
+              <span className="flex-1 text-xs font-semibold text-slate-500 uppercase tracking-wider">player</span>
+              <span className="w-14 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">min</span>
+              <span className="w-8 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">G</span>
+              <span className="w-8 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">A</span>
+            </div>
             {activePlayers.map(p => (
-              <div key={p.id} className="flex items-center justify-between px-4 py-2.5 bg-slate-800 rounded-xl">
-                <span className="text-white font-medium">{p.name}</span>
-                <span className="font-mono tabular-nums text-emerald-400">{fmtMs(p.timeOnFieldMs)}</span>
+              <div key={p.id} className="flex items-center px-4 py-2.5 border-b border-slate-700/50 last:border-0">
+                <span className="flex-1 text-white font-medium">{p.name}</span>
+                <span className="w-14 text-right font-mono tabular-nums text-emerald-400 text-sm">{fmtMs(p.timeOnFieldMs)}</span>
+                <span className="w-8 text-center text-sm font-semibold text-white">{goalsByPlayer[p.id] || '—'}</span>
+                <span className="w-8 text-center text-sm font-semibold text-slate-300">{assistsByPlayer[p.id] || '—'}</span>
               </div>
             ))}
           </div>
@@ -120,7 +141,7 @@ export default function Summary({ state, onClose, onReset, isFinal = false, moda
               onClick={onClose}
               className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold rounded-xl transition-colors"
             >
-              back to game
+              {isFinal ? 'back to review' : 'back to game'}
             </button>
           )}
         </div>
