@@ -81,10 +81,7 @@ export default function Game({ state, dispatch, onReset }: Props) {
     state.half === 1 ? '1st half' : '2nd half'
 
   const isActive = state.phase === 'playing' || state.phase === 'paused'
-
-  if (state.phase === 'final' && modal !== 'summary') {
-    return <Summary state={state} isFinal onReset={() => setModal('confirm_reset')} modal={modal} onModalClose={() => setModal(null)} onConfirmReset={onReset} />
-  }
+  const isFinal = state.phase === 'final'
 
   return (
     <div className="min-h-svh flex flex-col max-w-lg mx-auto">
@@ -181,6 +178,20 @@ export default function Game({ state, dispatch, onReset }: Props) {
         </div>
       )}
 
+      {/* Full time banner */}
+      {isFinal && (
+        <div className="bg-slate-800/80 border-b border-slate-600 px-4 py-4 text-center">
+          <p className="text-white font-bold text-lg">full time</p>
+          <p className="text-slate-400 text-sm mb-3">review or correct events, then view summary</p>
+          <button
+            onClick={() => setModal('summary')}
+            className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl transition-colors"
+          >
+            view summary →
+          </button>
+        </div>
+      )}
+
       <div className="flex-1 p-4 space-y-4 overflow-auto">
         {/* On field */}
         <div>
@@ -195,6 +206,7 @@ export default function Game({ state, dispatch, onReset }: Props) {
                 gameClockMs={state.gameClockMs}
                 isPendingOff={state.pendingSubOff === p.id}
                 onSubOff={() => handleSubOff(p.id)}
+                readOnly={isFinal}
               />
             ))}
           </div>
@@ -213,6 +225,7 @@ export default function Game({ state, dispatch, onReset }: Props) {
                   player={p}
                   isPendingOn={state.pendingSubOn === p.id}
                   onSubOn={() => handleSubOn(p.id)}
+                  readOnly={isFinal}
                 />
               ))}
             </div>
@@ -220,10 +233,10 @@ export default function Game({ state, dispatch, onReset }: Props) {
         )}
 
         {/* Sub hint */}
-        {state.pendingSubOff && (
+        {!isFinal && state.pendingSubOff && (
           <p className="text-xs text-amber-400 text-center">tap "sub on" to complete the substitution</p>
         )}
-        {state.pendingSubOn && (
+        {!isFinal && state.pendingSubOn && (
           <p className="text-xs text-emerald-400 text-center">tap "sub off" to complete the substitution</p>
         )}
 
@@ -243,7 +256,11 @@ export default function Game({ state, dispatch, onReset }: Props) {
           </button>
         </div>
 
-        <EventLog events={state.events} players={state.players} />
+        <EventLog
+          events={state.events}
+          players={state.players}
+          onDelete={isFinal ? (id) => dispatch({ type: 'DELETE_EVENT', eventId: id }) : undefined}
+        />
       </div>
 
       {/* Modals */}
@@ -261,7 +278,15 @@ export default function Game({ state, dispatch, onReset }: Props) {
       {modal === 'summary' && (
         <div className="fixed inset-0 bg-black/70 z-50 overflow-auto">
           <div className="min-h-svh bg-slate-900">
-            <Summary state={state} onClose={() => setModal(null)} onReset={() => setModal('confirm_reset')} />
+            <Summary
+              state={state}
+              onClose={() => setModal(null)}
+              onReset={() => setModal('confirm_reset')}
+              isFinal={isFinal}
+              modal={modal}
+              onModalClose={() => setModal(null)}
+              onConfirmReset={onReset}
+            />
           </div>
         </div>
       )}

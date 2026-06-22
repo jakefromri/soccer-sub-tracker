@@ -120,7 +120,7 @@ export default function Summary({ state, onClose, onReset, isFinal = false, moda
               onClick={onClose}
               className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold rounded-xl transition-colors"
             >
-              back to game
+              {isFinal ? 'back to review' : 'back to game'}
             </button>
           )}
         </div>
